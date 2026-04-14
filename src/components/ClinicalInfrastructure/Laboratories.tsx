@@ -1,18 +1,18 @@
 import { useState } from "react";
+import { useLabTests } from "../../config/hooks/lab.hooks";
 
 const FlaskIcon = () => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10 2v7.5"></path><path d="M14 2v7.5"></path><path d="M8.5 2h7"></path><path d="M14 11.5c.66 0 1.2.55 1.2 1.22 0 .3-.1.57-.29.82a6.11 6.11 0 0 1 1.09 3.42 6 6 0 0 1-12 0c0-1.3.4-2.5 1.09-3.42a1.36 1.36 0 0 1-.29-.82c0-.67.54-1.22 1.2-1.22h8Z"></path></svg>
 );
 
-const LAB_TESTS = [
-  { id: "LAB-X1", name: "Complete Blood Count", type: "Hematology", time: "2 Hours", status: "Critical Priority", price: "₹850" },
-  { id: "LAB-X2", name: "Lipid Profile", type: "Biochemistry", time: "4 Hours", status: "Routine", price: "₹1,200" },
-  { id: "LAB-X3", name: "HBA1C Diabetes", type: "Biochemistry", time: "1 Hour", status: "Urgent", price: "₹950" },
-  { id: "LAB-X4", name: "MRI Brain Contrast", type: "Radiology", time: "24 Hours", status: "Scheduled", price: "₹8,500" },
-];
-
 export function Laboratories() {
   const [search, setSearch] = useState("");
+  const { data: tests, isLoading, isError } = useLabTests();
+
+  const filteredTests = tests?.filter(t => 
+    t.name.toLowerCase().includes(search.toLowerCase()) || 
+    t.testId.toLowerCase().includes(search.toLowerCase())
+  );
 
   return (
     <div className="bg-white rounded-[40px] border border-slate-200/60 shadow-sm overflow-hidden animate-fade">
@@ -35,7 +35,22 @@ export function Laboratories() {
       <div className="p-10 grid grid-cols-1 md:grid-cols-2 gap-8">
          <div className="space-y-4">
             <h5 className="text-[0.65rem] font-black text-slate-400 uppercase tracking-widest pl-2">Active Catalog</h5>
-            {LAB_TESTS.filter(t => t.name.toLowerCase().includes(search.toLowerCase())).map((test) => (
+            
+            {isLoading && (
+              <div className="space-y-4 animate-pulse">
+                {Array(4).fill(0).map((_, i) => (
+                   <div key={i} className="bg-slate-50 h-[80px] rounded-[28px] border border-slate-100"></div>
+                ))}
+              </div>
+            )}
+
+            {isError && (
+               <div className="bg-rose-50 p-8 rounded-[28px] border border-rose-100 text-center">
+                  <p className="text-rose-500 font-black text-xs uppercase tracking-widest">Diagnostic Handshake Failed</p>
+               </div>
+            )}
+
+            {!isLoading && !isError && filteredTests?.map((test) => (
               <div key={test.id} className="bg-white p-6 rounded-[28px] border border-slate-100 hover:border-primary/20 hover:shadow-lg transition-all flex justify-between items-center group">
                  <div className="flex items-center gap-5">
                     <div className="w-12 h-12 bg-slate-50 text-slate-400 rounded-2xl flex items-center justify-center group-hover:bg-primary group-hover:text-white transition-all">
@@ -43,7 +58,7 @@ export function Laboratories() {
                     </div>
                     <div>
                        <h4 className="font-black text-slate-900 leading-tight">{test.name}</h4>
-                       <span className="text-[0.65rem] font-bold text-slate-400 uppercase tracking-widest">{test.id} • {test.type}</span>
+                       <span className="text-[0.65rem] font-bold text-slate-400 uppercase tracking-widest">{test.testId} • {test.type}</span>
                     </div>
                  </div>
                  <div className="text-right">
@@ -55,6 +70,12 @@ export function Laboratories() {
                  </div>
               </div>
             ))}
+
+            {!isLoading && !isError && filteredTests?.length === 0 && (
+               <div className="bg-slate-50 p-12 rounded-[28px] border border-dashed border-slate-200 text-center">
+                  <p className="text-slate-400 font-bold text-sm tracking-tight">No diagnostic tests matching your query.</p>
+               </div>
+            )}
          </div>
 
          <div className="bg-slate-900 rounded-[36px] p-10 text-white relative overflow-hidden shadow-2xl">
