@@ -1,20 +1,34 @@
-
+import { useState, useMemo } from "react";
+import { 
+  useAppointments, 
+  useUpdateAppointment, 
+  type Appointment 
+} from "../../config/hooks/appointment.hooks";
 
 export function Appointments() {
+  const { data: appointments = [], isLoading } = useAppointments();
+  const updateAppointment = useUpdateAppointment();
 
-  const queueStats = [
-    { label: "Today's Total", value: "128", trend: "+12%", color: "emerald" },
-    { label: "Waiting Now", value: "14", trend: "High Volume", color: "rose" },
-    { label: "Avg. Wait Time", value: "18m", trend: "-5m", color: "blue" },
-    { label: "Doctor Activity", value: "92%", trend: "Optimal", color: "amber" },
-  ];
+  const queueStats = useMemo(() => {
+    const today = new Date().toISOString().split('T')[0];
+    const todaysAppts = appointments.filter(a => a.date.startsWith(today));
+    const waiting = appointments.filter(a => a.status === "Waiting").length;
+    
+    return [
+      { label: "Today's Total", value: todaysAppts.length.toString(), trend: "+12%", color: "emerald" },
+      { label: "Waiting Now", value: waiting.toString(), trend: waiting > 10 ? "High Volume" : "Normal", color: "rose" },
+      { label: "Avg. Wait Time", value: "18m", trend: "-5m", color: "blue" },
+      { label: "Doctor Activity", value: "92%", trend: "Optimal", color: "amber" },
+    ];
+  }, [appointments]);
 
-  const appointments = [
-    { id: "AP-1024", patient: "Sarah Johnson", doctor: "Dr. Aris Thorne", time: "10:30 AM", type: "Online", status: "Waiting", priority: "High" },
-    { id: "AP-1025", patient: "Marcus Chen", doctor: "Dr. Elena Vance", time: "10:45 AM", type: "Offline", status: "In-Progress", priority: "Normal" },
-    { id: "AP-1026", patient: "Emma Wilson", doctor: "Dr. Sarah Miller", time: "11:00 AM", type: "Online", status: "Scheduled", priority: "Low" },
-    { id: "AP-1027", patient: "Robert Blake", doctor: "Dr. Aris Thorne", time: "11:15 AM", type: "Offline", status: "Scheduled", priority: "Normal" },
-  ];
+  const handleStatusChange = async (id: string, status: Appointment["status"]) => {
+    try {
+      await updateAppointment.mutateAsync({ id, status });
+    } catch (error) {
+      console.error("Failed to update status", error);
+    }
+  };
 
   return (
     <div className="grid grid-cols-12 gap-8 animate-in fade-in duration-700">
@@ -57,10 +71,10 @@ export function Appointments() {
             </div>
           </div>
           
-          <div className="overflow-x-auto">
-            <table className="w-full text-left">
-              <thead>
-                <tr className="bg-slate-50/50">
+          <div className="overflow-x-auto overflow-y-auto max-h-[600px] no-scrollbar">
+            <table className="w-full text-left border-separate border-spacing-0">
+              <thead className="sticky top-0 z-20">
+                <tr className="bg-slate-50/80 backdrop-blur-md">
                   <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">ID / Patient</th>
                   <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Consultant</th>
                   <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Time / Type</th>
@@ -69,26 +83,53 @@ export function Appointments() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-50">
-                {appointments.map((apt) => (
+                {isLoading ? (
+                  [1,2,3,4].map(i => (
+                    <tr key={i} className="animate-pulse">
+                      <td colSpan={5} className="px-8 py-6"><div className="h-12 bg-slate-50 rounded-2xl w-full"></div></td>
+                    </tr>
+                  ))
+                ) : appointments.length === 0 ? (
+                  <tr>
+                    <td colSpan={5} className="px-8 py-20 text-center">
+                      <div className="text-3xl mb-4">📅</div>
+                      <div className="text-slate-400 font-black uppercase text-[10px] tracking-[4px]">No Appointments Today</div>
+                    </td>
+                  </tr>
+                ) : appointments.map((apt) => (
                   <tr key={apt.id} className="group hover:bg-slate-50/30 transition-all">
                     <td className="px-8 py-5">
-                      <div className="font-bold text-slate-900">{apt.patient}</div>
-                      <div className="text-[10px] text-slate-400 font-medium tracking-tighter uppercase">{apt.id}</div>
+                      <div className="font-bold text-slate-900">{apt.patient?.name || "Unknown Patient"}</div>
+                      <div className="text-[10px] text-slate-400 font-medium tracking-tighter uppercase">{apt.appointmentId}</div>
                     </td>
-                    <td className="px-8 py-5 font-bold text-slate-700">{apt.doctor}</td>
                     <td className="px-8 py-5">
-                      <div className="font-bold text-slate-900">{apt.time}</div>
+                      <div className="font-bold text-slate-700">{apt.doctor?.name || "Unassigned"}</div>
+                      <div className="text-[9px] text-slate-400 font-bold uppercase">{apt.doctor?.specialty}</div>
+                    </td>
+                    <td className="px-8 py-5">
+                      <div className="font-bold text-slate-900">{apt.timeSlot}</div>
                       <span className={`text-[9px] font-black border uppercase px-1.5 py-0.5 rounded ${apt.type === 'Online' ? 'border-primary/20 text-primary bg-primary/5' : 'border-emerald-200 text-emerald-600 bg-emerald-50'}`}>
                         {apt.type}
                       </span>
                     </td>
                     <td className="px-8 py-5">
-                       <span className={`px-3 py-1 rounded-full text-[10px] font-bold ${
-                         apt.status === 'In-Progress' ? 'bg-emerald-500 text-white' : 
-                         apt.status === 'Waiting' ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-500'
-                       }`}>
-                         {apt.status}
-                       </span>
+                       <select 
+                         value={apt.status}
+                         onChange={(e) => handleStatusChange(apt.id, e.target.value as any)}
+                         className={`px-3 py-1 rounded-full text-[10px] font-bold border-none focus:ring-2 focus:ring-emerald-500/20 cursor-pointer ${
+                           apt.status === 'In-Progress' ? 'bg-emerald-500 text-white' : 
+                           apt.status === 'Waiting' ? 'bg-amber-100 text-amber-700' : 
+                           apt.status === 'Completed' ? 'bg-blue-50 text-blue-600' :
+                           apt.status === 'Cancelled' ? 'bg-rose-50 text-rose-600' :
+                           'bg-slate-100 text-slate-500'
+                         }`}
+                       >
+                         <option value="Scheduled">Scheduled</option>
+                         <option value="Waiting">Waiting</option>
+                         <option value="In-Progress">In-Progress</option>
+                         <option value="Completed">Completed</option>
+                         <option value="Cancelled">Cancelled</option>
+                       </select>
                     </td>
                     <td className="px-8 py-5">
                       <button className="text-slate-400 hover:text-emerald-500 transition-colors">

@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { Appointments } from "../Operations/Appointments";
-import { Billing } from "../Operations/Billing";
 import { EHR } from "../Operations/EHR";
 import { Emergency } from "../Operations/Emergency";
 
@@ -9,7 +8,6 @@ export function Operations() {
 
   const tabs = [
     { id: "appointments", label: "Scheduling & Queue" },
-    { id: "billing", label: "Revenue & Claims" },
     { id: "ehr", label: "Clinical Intelligence" },
     { id: "emergency", label: "Critical Response" },
   ];
@@ -32,7 +30,7 @@ export function Operations() {
             <span className="text-emerald-500 italic">& Workflow.</span>
           </h2>
           <p className="text-slate-400 font-medium mt-3 max-w-xl">
-            Unified control over clinical scheduling, financial ecosystems, and
+            Unified control over clinical scheduling, medical records, and
             emergency response logistics.
           </p>
         </div>
@@ -57,7 +55,6 @@ export function Operations() {
       {/* Main Module Content */}
       <div className="min-h-[600px]">
         {subTab === "appointments" && <Appointments />}
-        {subTab === "billing" && <Billing />}
         {subTab === "ehr" && <EHR />}
         {subTab === "emergency" && <Emergency />}
       </div>

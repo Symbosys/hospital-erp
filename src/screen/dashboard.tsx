@@ -15,6 +15,7 @@ import { Operations } from "../components/Operations/Operations";
 import { ClinicalSchedule } from "../components/ClinicalInfrastructure/ClinicalSchedule";
 import { FrontEndOps } from "../components/FrontEndOps/FrontEndOps";
 import { Administration } from "../components/Administration/Administration";
+import { Billing } from "../components/Operations/Billing";
 
 // --- Assets & Icons ---
 const GridIcon = ({ className }: { className?: string }) => (
@@ -473,10 +474,15 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
                     <div className="flex justify-between items-start mb-6">
                       <div
                         className={`p-3 rounded-2xl transition-transform group-hover:scale-110 ${
-                          stat.color === 'blue' ? 'bg-blue-50 text-blue-600' :
-                          stat.color === 'emerald' ? 'bg-emerald-50 text-emerald-600' :
-                          stat.color === 'amber' ? 'bg-amber-50 text-amber-600' :
-                          stat.color === 'rose' ? 'bg-rose-50 text-rose-600' : 'bg-slate-50 text-slate-600'
+                          stat.color === "blue"
+                            ? "bg-blue-50 text-blue-600"
+                            : stat.color === "emerald"
+                              ? "bg-emerald-50 text-emerald-600"
+                              : stat.color === "amber"
+                                ? "bg-amber-50 text-amber-600"
+                                : stat.color === "rose"
+                                  ? "bg-rose-50 text-rose-600"
+                                  : "bg-slate-50 text-slate-600"
                         }`}
                       >
                         {stat.icon}
@@ -625,10 +631,15 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
                       >
                         <div
                           className={`w-1 shadow-sm rounded-full shrink-0 ${
-                            item.color === 'red' ? 'bg-red-500' :
-                            item.color === 'amber' ? 'bg-amber-500' :
-                            item.color === 'blue' ? 'bg-blue-500' :
-                            item.color === 'emerald' ? 'bg-emerald-500' : 'bg-slate-500'
+                            item.color === "red"
+                              ? "bg-red-500"
+                              : item.color === "amber"
+                                ? "bg-amber-500"
+                                : item.color === "blue"
+                                  ? "bg-blue-500"
+                                  : item.color === "emerald"
+                                    ? "bg-emerald-500"
+                                    : "bg-slate-500"
                           }`}
                         ></div>
                         <div className="flex-1">
@@ -682,6 +693,7 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
           {activeTab === "activity" && <ClinicalSchedule />}
           {activeTab === "reception" && <FrontEndOps />}
           {activeTab === "administration" && <Administration />}
+          {activeTab === "billing" && <Billing />}
         </div>
       </main>
     </div>
