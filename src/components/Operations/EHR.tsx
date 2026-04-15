@@ -1,185 +1,185 @@
 import { useState } from "react";
+import { 
+  useEhrRecords, 
+  useCreateEhrRecord, 
+  type EHRRecord 
+} from "../../config/hooks/ehr.hooks";
+import { usePatients } from "../../config/hooks/patient.hooks";
 
-export function EHR() {
-  const [activeCategory, setActiveCategory] = useState("prescriptions");
+// ─── Entry Modal ──────────────────────────────────────────────────────────────
+function AddRecordModal({ onClose }: { onClose: () => void }) {
+  const createEhr = useCreateEhrRecord();
+  const { data: patients = [] } = usePatients();
+  const [form, setForm] = useState({
+    ehrId: `EHR-${Math.floor(10000 + Math.random() * 90000)}`,
+    patientId: "",
+    diagnosis: "",
+    prescription: "",
+    vitals: "",
+    doctorName: "",
+    visitDate: new Date().toISOString().split('T')[0],
+    notes: "",
+  });
 
-  const patientBio = {
-    name: "Jonathan Harker",
-    age: "34",
-    blood: "O+",
-    id: "MRN-9920",
-    vitals: [
-      { label: "BP", value: "118/76", unit: "mmHg", trend: "Normal" },
-      { label: "HR", value: "72", unit: "bpm", trend: "Steady" },
-      { label: "SPO2", value: "98", unit: "%", trend: "Optimal" },
-      { label: "Temp", value: "98.6", unit: "°F", trend: "Stable" },
-    ]
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      await createEhr.mutateAsync(form);
+      onClose();
+    } catch (err) {
+      console.error(err);
+    }
   };
 
+  const inputCls = "w-full px-6 py-4 rounded-2xl border border-slate-200 bg-slate-50 text-sm font-bold text-slate-800 focus:outline-none focus:border-indigo-500 transition-all";
+  const labelCls = "text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block ml-1";
+
   return (
-    <div className="grid grid-cols-12 gap-8 animate-in zoom-in-95 duration-500">
-      
-      {/* Patient Vitals Header */}
-      <div className="col-span-12 bg-white rounded-[40px] p-10 border border-slate-100 shadow-sm overflow-hidden relative group text-black">
-        <div className="absolute top-0 right-0 w-80 h-80 bg-slate-50 rounded-full -mr-40 -mt-40 blur-3xl opacity-50"></div>
-        
-        <div className="flex flex-col lg:flex-row justify-between gap-10 relative z-10">
-          <div className="flex gap-6 items-center">
-             <div className="w-20 h-20 bg-slate-900 rounded-[30px] flex items-center justify-center text-white text-2xl font-black italic">JH</div>
-             <div>
-                <div className="flex items-center gap-3">
-                   <h3 className="text-2xl font-outfit font-black text-slate-900">{patientBio.name}</h3>
-                   <span className="px-3 py-1 bg-emerald-50 text-emerald-600 text-[10px] font-black uppercase rounded-full tracking-wider border border-emerald-100">Verified EHR</span>
-                </div>
-                <div className="flex gap-4 mt-2 text-[11px] font-bold text-slate-400 uppercase tracking-widest">
-                   <span>ID: {patientBio.id}</span>
-                   <span>Age: {patientBio.age}</span>
-                   <span>Blood: <span className="text-rose-500 font-black">{patientBio.blood}</span></span>
-                </div>
-             </div>
+    <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-md z-[100] flex items-center justify-center p-6 animate-in fade-in duration-300">
+      <div className="bg-white rounded-[40px] shadow-2xl w-full max-w-2xl p-10 relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/5 rounded-full -mr-32 -mt-32 blur-3xl"></div>
+
+        <div className="relative z-10 flex items-center justify-between mb-10">
+          <div>
+            <h2 className="text-3xl font-black text-slate-900 font-outfit tracking-tighter">
+              Clinical <span className="text-indigo-600 italic">Encounter.</span>
+            </h2>
+            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">EHR Node Authorization</p>
           </div>
+          <button onClick={onClose} className="w-12 h-12 flex items-center justify-center rounded-2xl bg-slate-50 text-slate-400 hover:bg-slate-100 transition-all">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+          </button>
+        </div>
+
+        <form onSubmit={handleSubmit} className="grid grid-cols-2 gap-6 relative z-10">
+          <div className="col-span-2">
+            <label className={labelCls}>Subject Identity</label>
+            <select className={inputCls} value={form.patientId} onChange={(e) => setForm({ ...form, patientId: e.target.value })} required>
+              <option value="">Select Patient Record...</option>
+              {patients.map(p => <option key={p.id} value={p.id}>{p.name} ({p.patientId})</option>)}
+            </select>
+          </div>
+          <div><label className={labelCls}>Attending Consultant</label><input className={inputCls} placeholder="Dr. Elena Vance" value={form.doctorName} onChange={(e) => setForm({ ...form, doctorName: e.target.value })} required /></div>
+          <div><label className={labelCls}>Encounter Date</label><input className={inputCls} type="date" value={form.visitDate} onChange={(e) => setForm({ ...form, visitDate: e.target.value })} required /></div>
+          <div className="col-span-2"><label className={labelCls}>Primary Diagnosis</label><input className={inputCls} placeholder="Type clinical diagnosis..." value={form.diagnosis} onChange={(e) => setForm({ ...form, diagnosis: e.target.value })} required /></div>
+          <div className="col-span-2"><label className={labelCls}>Vital Metrics</label><input className={inputCls} placeholder="BP: 120/80, HR: 72bpm..." value={form.vitals} onChange={(e) => setForm({ ...form, vitals: e.target.value })} /></div>
+          <div className="col-span-2"><label className={labelCls}>Prescription Node</label><textarea className={`${inputCls} h-24 resize-none`} placeholder="Enter medication details..." value={form.prescription} onChange={(e) => setForm({ ...form, prescription: e.target.value })} /></div>
           
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 flex-1 lg:max-w-2xl">
-             {patientBio.vitals.map((vital, i) => (
-               <div key={i} className="bg-slate-50/50 p-4 rounded-3xl border border-slate-100 flex flex-col justify-center">
-                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{vital.label}</span>
-                  <div className="flex items-baseline gap-1 mt-1">
-                     <span className="text-xl font-black text-slate-900 font-outfit">{vital.value}</span>
-                     <span className="text-[10px] font-bold text-slate-400">{vital.unit}</span>
-                  </div>
-                  <div className="w-full h-1 bg-slate-200 mt-3 rounded-full overflow-hidden">
-                     <div className="w-3/4 h-full bg-emerald-400 rounded-full"></div>
-                  </div>
-               </div>
-             ))}
+          <div className="col-span-2 pt-4">
+            <button disabled={createEhr.isPending} className="w-full py-5 bg-slate-900 text-white rounded-[24px] font-black text-[11px] uppercase tracking-[4px] shadow-xl hover:-translate-y-1 transition-all">
+              {createEhr.isPending ? "Integrating Node..." : "Commit Record"}
+            </button>
           </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+// ─── Main View ─────────────────────────────────────────────────────────────
+export function EHR() {
+  const [showAdd, setShowAdd] = useState(false);
+  const [searchId, setSearchId] = useState("");
+  const { data: records = [], isLoading } = useEhrRecords();
+
+  const filteredRecords = searchId 
+    ? records.filter(r => r.patient?.name.toLowerCase().includes(searchId.toLowerCase()) || r.ehrId.toLowerCase().includes(searchId.toLowerCase()))
+    : records;
+
+  return (
+    <div className="space-y-12 animate-fade max-w-[1500px] mx-auto pb-24">
+      {showAdd && <AddRecordModal onClose={() => setShowAdd(false)} />}
+
+      {/* --- Executive Header --- */}
+      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-10 bg-white p-12 rounded-[50px] border border-slate-200/50 shadow-sm relative overflow-hidden">
+        <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-blue-600 via-indigo-600 to-violet-600"></div>
+        <div className="absolute -right-20 -top-20 w-80 h-80 bg-indigo-500/5 rounded-full blur-3xl"></div>
+
+        <div className="relative z-10">
+          <div className="flex items-center gap-4 mb-6">
+            <div className="px-5 py-2 bg-indigo-50 text-indigo-600 rounded-full text-[10px] font-black uppercase tracking-widest border border-indigo-100 flex items-center gap-2">
+               <span className="w-2 h-2 bg-indigo-600 rounded-full animate-pulse"></span> Identity Ledger Active
+            </div>
+            <span className="text-[10px] font-black text-slate-300 uppercase tracking-[4px]">V9.1 Clinical Matrix</span>
+          </div>
+          <h1 className="text-5xl font-black font-outfit text-slate-900 tracking-tighter leading-none">
+            Digital Health <span className="text-indigo-600 italic">Ledger.</span>
+          </h1>
+          <p className="text-slate-400 font-medium mt-4 max-w-xl text-[1.05rem]">
+            Consolidated longitudinal history including encounters, prescriptions, and spectral vitals encryption.
+          </p>
+        </div>
+
+        <div className="flex gap-4 relative z-10">
+          <div className="relative group">
+            <input 
+              type="text" 
+              placeholder="Search Identity..." 
+              value={searchId}
+              onChange={(e) => setSearchId(e.target.value)}
+              className="px-10 py-5 bg-slate-50 border border-slate-100 rounded-[30px] font-bold text-sm text-slate-900 focus:outline-none focus:border-indigo-400 w-64 lg:w-80 transition-all placeholder:text-slate-300 shadow-inner"
+            />
+            <svg className="absolute left-4 top-5 text-slate-300" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+          </div>
+          <button onClick={() => setShowAdd(true)} className="px-10 py-5 bg-slate-900 text-white rounded-[30px] font-black text-[11px] uppercase tracking-widest hover:scale-[1.05] active:scale-95 transition-all shadow-xl shadow-slate-900/10">
+            + New Encounter
+          </button>
         </div>
       </div>
 
-      {/* Main EHR Content */}
-      <div className="col-span-12 lg:col-span-8 space-y-8">
-        <div className="bg-white rounded-[40px] border border-slate-100 shadow-sm overflow-hidden text-black">
-          <div className="flex border-b border-slate-100">
-             <button 
-               onClick={() => setActiveCategory("prescriptions")}
-               className={`flex-1 py-8 font-black text-[11px] uppercase tracking-widest transition-all ${activeCategory === 'prescriptions' ? 'text-primary border-b-2 border-primary shadow-[inset_0_-10px_10px_-10px_rgba(37,99,235,0.1)]' : 'text-slate-400 hover:text-slate-600'}`}
-             >
-               Digital Prescriptions (e-Rx)
-             </button>
-             <button 
-               onClick={() => setActiveCategory("imaging")}
-               className={`flex-1 py-8 font-black text-[11px] uppercase tracking-widest transition-all ${activeCategory === 'imaging' ? 'text-primary border-b-2 border-primary shadow-[inset_0_-10px_10px_-10px_rgba(37,99,235,0.1)]' : 'text-slate-400 hover:text-slate-600'}`}
-             >
-               Diagnostic Imaging (PACS)
-             </button>
+      {/* --- Ledger Node List --- */}
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
+        {isLoading ? (
+          Array(4).fill(0).map((_, i) => (
+            <div key={i} className="h-64 bg-white rounded-[45px] animate-pulse border border-slate-100"></div>
+          ))
+        ) : filteredRecords.length === 0 ? (
+          <div className="col-span-full py-40 text-center bg-white rounded-[60px] border border-dashed border-slate-200">
+             <div className="text-4xl mb-6">🩺</div>
+             <div className="text-slate-300 font-black uppercase text-xs tracking-[10px]">No Encounters Cataloged</div>
           </div>
-
-          <div className="p-10 min-h-[400px]">
-             {activeCategory === 'prescriptions' ? (
-               <div className="space-y-8">
-                  <div className="flex justify-between items-center">
-                     <h4 className="font-outfit font-black text-xl">Active <span className="text-primary italic">Medications.</span></h4>
-                     <button className="bg-primary text-white px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-primary/20">+ New Rx</button>
-                  </div>
-                  
-                  <div className="grid gap-4">
-                     {[
-                       { med: "Amoxicillin CLV", dose: "625mg", freq: "BD (Morning/Night)", duration: "5 Days", refill: "No" },
-                       { med: "Pantoprazole", dose: "40mg", freq: "OD (Empty Stomach)", duration: "10 Days", refill: "Yes" },
-                       { med: "Paracetamol", dose: "500mg", freq: "SOS", duration: "3 Days", refill: "Yes" }
-                     ].map((rx, i) => (
-                       <div key={i} className="group flex items-center justify-between p-6 bg-slate-50/50 rounded-[30px] border border-slate-100 hover:bg-white hover:border-primary/20 hover:shadow-xl hover:shadow-primary/5 transition-all">
-                          <div className="flex items-center gap-5">
-                             <div className="w-12 h-12 bg-white rounded-2xl shadow-sm border border-slate-100 flex items-center justify-center text-xl">💊</div>
-                             <div>
-                                <div className="font-bold text-slate-900">{rx.med} <span className="text-[10px] text-slate-400 font-medium ml-2">{rx.dose}</span></div>
-                                <div className="text-[10px] text-slate-500 font-bold mt-1 uppercase tracking-wider">{rx.freq} • {rx.duration}</div>
-                             </div>
-                          </div>
-                          <div className="flex items-center gap-6">
-                             <div className="text-right">
-                                <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-tighter ${rx.refill === 'Yes' ? 'bg-emerald-50 text-emerald-600' : 'bg-slate-100 text-slate-400'}`}>
-                                   Refill: {rx.refill}
-                                </span>
-                             </div>
-                             <button className="w-10 h-10 bg-white rounded-xl border border-slate-200 flex items-center justify-center hover:bg-primary hover:text-white transition-colors">
-                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
-                             </button>
-                          </div>
-                       </div>
-                     ))}
-                  </div>
-               </div>
-             ) : (
-               <div className="space-y-8 animate-in fade-in duration-500">
-                  <div className="flex justify-between items-center text-black ">
-                     <h4 className="font-outfit font-black text-xl">Visual <span className="text-blue-500 italic">Diagnostics.</span></h4>
-                     <div className="flex gap-2">
-                        <button className="p-3 bg-slate-100 rounded-xl">
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
-                        </button>
-                        <button className="p-3 bg-slate-100 rounded-xl">
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" /></svg>
-                        </button>
-                     </div>
-                  </div>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                     {[
-                       { label: "Chest X-Ray (A/P View)", date: "08 April 2024", file: "Radiology Node B", size: "128MB", color: "blue" },
-                       { label: "Head MRI (T2 Weighted)", date: "05 April 2024", file: "Neurology Node A", size: "4.2GB", color: "indigo" }
-                     ].map((item, i) => (
-                       <div key={i} className="group relative rounded-[32px] overflow-hidden border border-slate-100 aspect-video bg-slate-900 flex flex-col justify-end p-6 hover:border-primary/50 transition-all cursor-pointer">
-                          <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/20 to-transparent"></div>
-                          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-20 group-hover:opacity-40 transition-opacity">
-                             <svg className="w-16 h-16 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" /></svg>
-                          </div>
-                          <div className="relative z-10">
-                             <span className={`px-2 py-0.5 bg-${item.color}-500 text-white text-[9px] font-black uppercase rounded tracking-widest`}>{item.size} DICOM</span>
-                             <h5 className="text-white font-bold mt-2">{item.label}</h5>
-                             <div className="flex justify-between items-center mt-3">
-                                <span className="text-white/40 text-[10px] uppercase font-bold tracking-widest">{item.date}</span>
-                                <span className="text-white/40 text-[10px] uppercase font-bold">{item.file}</span>
-                             </div>
-                          </div>
-                       </div>
-                     ))}
-                  </div>
-               </div>
-             )}
-          </div>
-        </div>
-      </div>
-
-      {/* EHR Timeline Sidebar */}
-      <div className="col-span-12 lg:col-span-4 bg-white rounded-[40px] border border-slate-100 shadow-sm p-10 text-black">
-         <h4 className="font-outfit font-black text-xl mb-8">Clinical <span className="text-primary italic">Timeline.</span></h4>
-         
-         <div className="space-y-10 relative">
-            <div className="absolute top-0 bottom-0 left-[19px] w-0.5 bg-slate-100"></div>
-            
-            {[
-              { title: "Physical Consultation", author: "Dr. Thorne", time: "10:30 AM", type: "Visit", current: true },
-              { title: "Vitals Synchronized", author: "Staff Nurse", time: "09:45 AM", type: "Data" },
-              { title: "Lab Reports Uploaded", author: "MedLab Node", time: "Yesterday", type: "Test" },
-              { title: "Emergency Triage", author: "Dept EMS", time: "04 April", type: "Priority" },
-            ].map((ev, i) => (
-              <div key={i} className="relative pl-12">
-                 <div className={`absolute left-0 top-1 w-10 h-10 rounded-2xl border-4 border-white shadow-md flex items-center justify-center z-10 ${ev.current ? 'bg-primary text-white' : 'bg-slate-50 text-slate-400'}`}>
-                    <div className="w-2 h-2 rounded-full bg-current"></div>
-                 </div>
-                 <div>
-                    <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">{ev.time}</div>
-                    <div className="font-bold text-slate-900 text-sm">{ev.title}</div>
-                    <div className="text-[11px] text-slate-500 font-medium">Logged by {ev.author}</div>
-                 </div>
+        ) : (
+          filteredRecords.map((record) => (
+            <div key={record.id} className="bg-white p-10 rounded-[50px] border border-slate-200/40 shadow-sm hover:shadow-2xl hover:shadow-indigo-500/5 hover:-translate-y-2 transition-all duration-500 relative overflow-hidden group">
+              <div className="absolute top-0 right-0 p-8">
+                 <div className="text-[10px] font-black text-slate-300 uppercase tracking-widest">{record.ehrId}</div>
               </div>
-            ))}
-         </div>
-         
-         <button className="w-full mt-10 py-4 bg-slate-900 text-white font-black text-[11px] uppercase tracking-[2px] rounded-2xl hover:bg-primary transition-all">Export Clinical Summary</button>
+              
+              <div className="flex items-start gap-8">
+                <div className="w-16 h-16 rounded-[24px] bg-slate-100 flex items-center justify-center font-black text-2xl text-slate-400 group-hover:bg-indigo-600 group-hover:text-white transition-all duration-500 shadow-inner">
+                  {record.patient?.name.charAt(0)}
+                </div>
+                <div className="flex-1">
+                   <div className="flex items-center justify-between mb-2">
+                      <h3 className="text-xl font-black text-slate-900 font-outfit tracking-tight">{record.patient?.name}</h3>
+                      <span className="text-[10px] font-black text-indigo-600 uppercase tracking-widest bg-indigo-50 px-3 py-1.5 rounded-full">{record.visitDate.split('T')[0]}</span>
+                   </div>
+                   <div className="text-[10px] font-black text-slate-400 uppercase tracking-[3px] mb-8">Consultant: {record.doctorName}</div>
+                   
+                   <div className="grid grid-cols-2 gap-6 bg-slate-50/50 p-6 rounded-[35px] border border-slate-100">
+                      <div>
+                         <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-1">Diagnosis</span>
+                         <div className="text-xs font-bold text-slate-800 line-clamp-2">{record.diagnosis}</div>
+                      </div>
+                      <div>
+                         <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-1">Spectral Vitals</span>
+                         <div className="text-xs font-bold text-indigo-600">{record.vitals || "No Data"}</div>
+                      </div>
+                   </div>
+
+                   <button className="mt-8 text-[11px] font-black text-indigo-600 uppercase tracking-[4px] hover:translate-x-2 transition-transform inline-flex items-center gap-2">
+                     Retrieve Full Matrix →
+                   </button>
+                </div>
+              </div>
+            </div>
+          ))
+        )}
       </div>
 
+      <footer className="text-center pt-12">
+         <p className="text-[10px] font-black text-slate-300 uppercase tracking-[15px]">Digital Fiscal Backbone &bull; V9.1 Stable Matrix</p>
+      </footer>
     </div>
   );
 }
