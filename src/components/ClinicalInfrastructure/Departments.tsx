@@ -94,7 +94,12 @@ export function Departments() {
                <h3 className="text-xl font-black text-slate-900">Inter-Departmental Flow</h3>
                <p className="text-sm text-slate-400 font-medium">Monitoring patient transfer logistics and resource sharing.</p>
             </div>
-            <button className="px-6 py-3 bg-slate-50 text-slate-600 font-bold text-xs rounded-2xl hover:bg-slate-900 hover:text-white transition-all">Configure Hierarchy</button>
+            <button 
+               onClick={() => alert("Initializing Hierarchical Configurator...\nAccess Restricted to Clinical Administration.")}
+               className="px-6 py-3 bg-slate-50 text-slate-600 font-bold text-xs rounded-2xl hover:bg-slate-900 hover:text-white transition-all"
+            >
+               Configure Hierarchy
+            </button>
          </div>
          
          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -114,7 +119,10 @@ export function Departments() {
                   <span className="font-bold text-slate-800 text-lg">System Baseline</span>
                </div>
             </div>
-            <div className="p-8 bg-primary text-white rounded-[32px] shadow-xl shadow-primary/20 cursor-pointer hover:scale-105 transition-transform">
+            <div 
+               onClick={() => alert("Accessing Institutional Topology Node... Deployment scheduled for next infrastructure expansion cycle.")}
+               className="p-8 bg-primary text-white rounded-[32px] shadow-xl shadow-primary/20 cursor-pointer hover:scale-105 transition-transform"
+            >
                <h5 className="text-[0.65rem] font-black text-white/60 uppercase tracking-widest mb-4">Infrastructure Expansion</h5>
                <div className="flex items-center justify-between">
                   <span className="font-extrabold text-sm uppercase">Open Dept Node</span>

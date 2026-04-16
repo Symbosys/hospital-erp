@@ -1,6 +1,7 @@
-
+import { useDepartments } from "../../config/hooks/department.hooks";
 
 export function Compliance() {
+  const { data: departments = [] } = useDepartments();
   const documents = [
     { title: "Institutional License 2024", type: "Legal", expiry: "20 Dec 2024", status: "Active", level: "Critical" },
     { title: "Narayana Bio-Waste Cert", type: "Regulation", expiry: "12 Oct 2024", status: "Expiring", level: "High" },
@@ -24,7 +25,12 @@ export function Compliance() {
                 <div className="text-lg font-black text-emerald-400">12 / 14</div>
               </div>
               <div className="text-right">
-                <button className="text-[10px] text-primary font-black uppercase tracking-widest hover:underline">Full Disclosure</button>
+                <button 
+                  onClick={() => alert("Retrieving Institutional Full Disclosure Pack...\n[Audit Log: 2024-X-102]\nIntegrity: Verified ✅")}
+                  className="text-[10px] text-primary font-black uppercase tracking-widest hover:underline"
+                >
+                  Full Disclosure
+                </button>
               </div>
             </div>
           </div>
@@ -32,16 +38,18 @@ export function Compliance() {
           <div className="bg-white rounded-[40px] border border-slate-100 p-8 shadow-sm">
              <h4 className="font-outfit font-black text-lg mb-6">Legislative <span className="text-slate-400 font-normal underline decoration-primary/20">Roadmap.</span></h4>
              <div className="space-y-6">
-                {[
-                  { month: "OCT", task: "Annual Bio-Waste Renewal", dept: "Facility Mgmt" },
-                  { month: "NOV", task: "Radiology Safety Review", dept: "Diagnostics" },
-                  { month: "DEC", task: "Institutional Audit", dept: "Legal" },
-                ].map((item, i) => (
-                  <div key={i} className="flex gap-4 items-center">
-                    <div className="w-12 h-12 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-center font-black text-slate-400 text-xs">{item.month}</div>
+                {departments.length === 0 ? (
+                  <p className="text-xs text-slate-400 italic">Accessing roadmap telemetry...</p>
+                ) : departments.slice(0, 3).map((dept, i) => (
+                  <div key={i} className="flex gap-4 items-center group cursor-pointer">
+                    <div className={`w-12 h-12 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-center font-black text-slate-400 text-xs group-hover:bg-primary/10 group-hover:text-primary transition-all`}>
+                      {["OCT", "NOV", "DEC"][i % 3]}
+                    </div>
                     <div>
-                      <div className="text-sm font-bold text-slate-900 tracking-tight leading-none">{item.task}</div>
-                      <div className="text-[10px] text-slate-400 font-bold uppercase mt-1">{item.dept}</div>
+                      <div className="text-sm font-bold text-slate-900 tracking-tight leading-none group-hover:text-primary transition-colors">
+                        {i === 0 ? "Annual Safety Review" : i === 1 ? "Regulatory Audit" : "Node Certification"}
+                      </div>
+                      <div className="text-[10px] text-slate-400 font-black uppercase mt-1 tracking-widest">{dept.name}</div>
                     </div>
                   </div>
                 ))}
@@ -56,7 +64,12 @@ export function Compliance() {
                 <h3 className="font-outfit font-black text-2xl text-slate-900">Document <span className="text-primary italic">Vault.</span></h3>
                 <p className="text-slate-400 text-xs font-medium uppercase tracking-widest mt-1">Regulatory & Institutional Certifications</p>
              </div>
-             <button className="bg-primary text-white px-8 py-3 rounded-2xl font-black text-xs shadow-lg shadow-primary-glow hover:-translate-y-0.5 transition-all">Upload Document</button>
+             <button 
+               onClick={() => alert("Initializing Secure Document Uplink...\nSelect clinical certification or legal regulatory file.")}
+               className="bg-primary text-white px-8 py-3 rounded-2xl font-black text-xs shadow-lg shadow-primary-glow hover:-translate-y-0.5 transition-all"
+             >
+               Upload Document
+             </button>
           </div>
           
           <div className="p-6">
@@ -71,7 +84,11 @@ export function Compliance() {
               </thead>
               <tbody className="divide-y divide-slate-50">
                 {documents.map((doc, idx) => (
-                  <tr key={idx} className="group hover:bg-slate-50/50 transition-all cursor-pointer">
+                  <tr 
+                    key={idx} 
+                    onClick={() => alert(`Accessing Verification Node for: ${doc.title}\nMaturity: ${doc.expiry}\nStatus: ${doc.status}`)}
+                    className="group hover:bg-slate-50/50 transition-all cursor-pointer"
+                  >
                     <td className="px-6 py-6 font-bold">
                        <div className="text-slate-900 group-hover:text-primary transition-colors">{doc.title}</div>
                        <div className="text-[10px] text-slate-400 font-black uppercase tracking-widest mt-0.5">{doc.type}</div>

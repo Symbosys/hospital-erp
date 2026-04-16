@@ -1,7 +1,11 @@
 import { useState } from "react";
 import { Doctors } from "./Doctors";
 import { MedicalStaff } from "./MedicalStaff";
+import { NonMedicalStaff } from "./NonMedicalStaff";
 import { Patients } from "./Patients";
+import { useDoctors } from "../../config/hooks/doctor.hooks";
+import { useMedicalStaff, useNonMedicalStaff } from "../../config/hooks/staff.hooks";
+import { usePatients } from "../../config/hooks/patient.hooks";
 
 export function HumanCapital() {
   const [subTab, setSubTab] = useState("overview");
@@ -9,7 +13,8 @@ export function HumanCapital() {
   const tabs = [
     { id: "overview", label: "Executive Overview" },
     { id: "doctors", label: "Consultants" },
-    { id: "medical_staff", label: "Medical Staff" },
+    { id: "medical_staff", label: "Nursing & Clinical" },
+    { id: "non_medical_staff", label: "Support Personnel" },
     { id: "patients", label: "Patient Registry" },
   ];
 
@@ -52,6 +57,7 @@ export function HumanCapital() {
         {subTab === "overview" && <HumanCapitalOverview onNavigate={setSubTab} />}
         {subTab === "doctors" && <Doctors />}
         {subTab === "medical_staff" && <MedicalStaff />}
+        {subTab === "non_medical_staff" && <NonMedicalStaff />}
         {subTab === "patients" && <Patients />}
       </div>
     </div>
@@ -59,16 +65,43 @@ export function HumanCapital() {
 }
 
 function HumanCapitalOverview({ onNavigate }: { onNavigate: (id: string) => void }) {
+  const { data: doctors = [] } = useDoctors();
+  const { data: medicalStaff = [] } = useMedicalStaff();
+  const { data: nonMedicalStaff = [] } = useNonMedicalStaff();
+  const { data: patients = [] } = usePatients();
+
+  const metrics = [
+    { 
+      label: "Total Doctors", 
+      val: doctors.length.toString(), 
+      sub: `${doctors.filter(d => d.status === "On Duty").length} On Duty`, 
+      color: "blue" 
+    },
+    { 
+      label: "Nursing & Clinical", 
+      val: medicalStaff.length.toString(), 
+      sub: `${medicalStaff.filter(s => s.status === "On Duty").length} Active Now`, 
+      color: "emerald" 
+    },
+    { 
+      label: "Inpatient Registry", 
+      val: patients.filter(p => p.status === "Inpatient").length.toString(), 
+      sub: `${patients.filter(p => p.status === "Outpatient").length} Outpatients`, 
+      color: "rose" 
+    },
+    { 
+      label: "Support Infrastructure", 
+      val: nonMedicalStaff.length.toString(), 
+      sub: `${nonMedicalStaff.filter(s => s.status === "Active").length} Operational`, 
+      color: "amber" 
+    },
+  ];
+
   return (
     <div className="space-y-8 animate-fade-in">
       {/* Metrics Row */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {[
-          { label: "Total Doctors", val: "142", sub: "12 In Surgery", color: "blue" },
-          { label: "Nursing Staff", val: "408", sub: "Shift Change in 2h", color: "emerald" },
-          { label: "Active Patients", val: "1,240", sub: "+14 New Admits", color: "rose" },
-          { label: "Admissions Ops", val: "24", sub: "Front-desk Active", color: "amber" },
-        ].map((m, i) => (
+        {metrics.map((m, i) => (
           <div key={i} className="bg-white p-8 rounded-[36px] border border-slate-200/60 shadow-sm group">
             <span className="text-[0.6rem] font-black text-slate-400 uppercase tracking-widest block mb-4">{m.label}</span>
             <p className="text-4xl font-black text-slate-900 mb-2">{m.val}</p>

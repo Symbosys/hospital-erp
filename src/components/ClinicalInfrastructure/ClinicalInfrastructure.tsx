@@ -21,19 +21,23 @@ export function ClinicalInfrastructure() {
       <div className="flex justify-between items-center">
         <div>
           <h2 className="text-3xl font-outfit font-black text-slate-900 leading-none">
-            Clinical <span className="text-primary italic">Infrastructure.</span>
+            Clinical{" "}
+            <span className="text-primary italic">Infrastructure.</span>
           </h2>
-          <p className="text-slate-400 font-medium mt-2">Space-time management of physical hospital capacity and clinical labs.</p>
+          <p className="text-slate-400 font-medium mt-2">
+            Space-time management of physical hospital capacity and clinical
+            labs.
+          </p>
         </div>
-        
+
         <div className="flex bg-white/50 border border-slate-200 p-1.5 rounded-2xl gap-2 shadow-sm">
           {tabs.map((tab) => (
             <button
               key={tab.id}
               onClick={() => setSubTab(tab.id)}
-              className={`px-6 py-2.5 rounded-xl font-bold text-xs transition-all ${    
-                subTab === tab.id 
-                  ? "bg-primary text-white shadow-lg shadow-primary-glow" 
+              className={`px-6 py-2.5 rounded-xl font-bold text-xs transition-all ${
+                subTab === tab.id
+                  ? "bg-primary text-white shadow-lg shadow-primary-glow"
                   : "text-slate-500 hover:bg-white hover:text-slate-800"
               }`}
             >

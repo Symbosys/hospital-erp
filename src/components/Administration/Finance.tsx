@@ -7,7 +7,7 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import {
   useBillingRecords,
   type BillingRecord,
@@ -22,6 +22,7 @@ const fmt = (n: number) => {
 
 // ── Main UI Component ──
 export function Finance() {
+  const [view, setView] = useState<"overview" | "stream">("overview");
   const { data: billing = [], isLoading } = useBillingRecords();
 
   const totalRev = useMemo<number>(
@@ -131,10 +132,24 @@ export function Finance() {
         </div>
 
         <div className="flex bg-white p-2.5 rounded-[35px] shadow-2xl shadow-indigo-100 border border-slate-50">
-          <button className="px-10 py-5 bg-indigo-600 rounded-[28px] text-white font-black text-[11px] uppercase tracking-widest hover:scale-[1.05] transition-all shadow-xl shadow-indigo-200">
+          <button 
+            onClick={() => setView("overview")}
+            className={`px-10 py-5 rounded-[28px] font-black text-[11px] uppercase tracking-widest transition-all ${
+              view === "overview" 
+                ? "bg-indigo-600 text-white shadow-xl shadow-indigo-200" 
+                : "text-slate-400 hover:text-slate-900"
+            }`}
+          >
             Executive Audit
           </button>
-          <button className="px-10 py-5 text-slate-400 font-black text-[11px] uppercase tracking-widest hover:text-slate-900 transition-all">
+          <button 
+            onClick={() => setView("stream")}
+            className={`px-10 py-5 rounded-[28px] font-black text-[11px] uppercase tracking-widest transition-all ${
+              view === "stream" 
+                ? "bg-indigo-600 text-white shadow-xl shadow-indigo-200" 
+                : "text-slate-400 hover:text-slate-900"
+            }`}
+          >
             Fiscal Stream
           </button>
         </div>
@@ -223,14 +238,25 @@ export function Finance() {
               ))}
             </div>
           </div>
-          <button className="w-full mt-16 py-6 bg-white/10 rounded-[30px] border border-white/10 text-white font-black text-[11px] uppercase tracking-[6px] hover:bg-white/20 transition-all">
+          <button 
+            onClick={() => {
+              const csv = "Date,BillID,Category,Amount,PaidAmount\n" + billing.map(b => `${new Date(b.issuedOn).toLocaleDateString()},${b.billId},${b.category},${b.amount},${b.paidAmount}`).join("\n");
+              const blob = new Blob([csv], { type: 'text/csv' });
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement('a');
+              a.href = url;
+              a.download = `institutional_audit_${new Date().getTime()}.csv`;
+              a.click();
+            }}
+            className="w-full mt-16 py-6 bg-white/10 rounded-[30px] border border-white/10 text-white font-black text-[11px] uppercase tracking-[6px] hover:bg-white/20 transition-all"
+          >
             Download Audit
           </button>
         </div>
       </div>
 
-      {/* --- Performance Pulse --- */}
-      <div className="bg-white rounded-[70px] p-20 shadow-2xl shadow-indigo-50/50 border border-slate-50">
+      {view === "overview" ? (
+        <div className="bg-white rounded-[70px] p-20 shadow-2xl shadow-indigo-50/50 border border-slate-50 animate-fade">
         <div className="flex justify-between items-end mb-24">
           <div>
             <h3 className="text-4xl font-black font-outfit text-slate-900 tracking-tighter mb-4">
@@ -280,7 +306,10 @@ export function Finance() {
                   boxShadow: "0 40px 80px rgba(0,0,0,0.1)",
                   padding: "30px",
                 }}
-                formatter={(value: any) => [fmt(Number(value) || 0), "Institutional Net"]}
+                formatter={(value: any) => [
+                  fmt(Number(value) || 0),
+                  "Institutional Net",
+                ]}
               />
               <Area
                 type="monotone"
@@ -296,6 +325,49 @@ export function Finance() {
           </ResponsiveContainer>
         </div>
       </div>
+      ) : (
+        <div className="bg-white rounded-[70px] p-20 shadow-2xl shadow-indigo-50/50 border border-slate-50 animate-in slide-in-from-bottom duration-700">
+           <div className="flex justify-between items-center mb-16">
+              <div>
+                 <h3 className="text-4xl font-black font-outfit text-slate-900 tracking-tighter mb-4">Live Fiscal <span className="text-indigo-600 italic">Streaming.</span></h3>
+                 <p className="text-slate-400 text-xs font-black uppercase tracking-[6px]">Real-time institutional realization nodes</p>
+              </div>
+           </div>
+           
+           <div className="overflow-x-auto">
+              <table className="w-full text-left">
+                 <thead>
+                    <tr className="border-b border-slate-100">
+                       <th className="py-8 text-[10px] font-black text-slate-400 uppercase tracking-widest px-4">Node ID</th>
+                       <th className="py-8 text-[10px] font-black text-slate-400 uppercase tracking-widest px-4">Category</th>
+                       <th className="py-8 text-[10px] font-black text-slate-400 uppercase tracking-widest px-4">Total Amount</th>
+                       <th className="py-8 text-[10px] font-black text-slate-400 uppercase tracking-widest px-4">Realized</th>
+                       <th className="py-8 text-[10px] font-black text-slate-400 uppercase tracking-widest px-4 text-right">Integrity</th>
+                    </tr>
+                 </thead>
+                 <tbody className="divide-y divide-slate-50">
+                    {billing.map(b => (
+                       <tr key={b.id} className="group hover:bg-indigo-50/30 transition-all">
+                          <td className="py-8 px-4">
+                             <div className="font-black text-slate-900">{b.billId}</div>
+                             <div className="text-[9px] font-bold text-slate-400 uppercase mt-1">{new Date(b.issuedOn).toLocaleDateString()}</div>
+                          </td>
+                          <td className="py-8 px-4 font-bold text-slate-600 text-sm">{b.category}</td>
+                          <td className="py-8 px-4 font-black text-slate-900">{fmt(b.amount)}</td>
+                          <td className="py-8 px-4 font-black text-indigo-600">{fmt(b.paidAmount)}</td>
+                          <td className="py-8 px-4 text-right">
+                             <span className={`px-4 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-wider ${
+                                b.status === 'Paid' ? 'bg-emerald-50 text-emerald-600' :
+                                b.status === 'Pending' ? 'bg-amber-50 text-amber-600' : 'bg-slate-100 text-slate-500'
+                             }`}>{b.status}</span>
+                          </td>
+                       </tr>
+                    ))}
+                 </tbody>
+              </table>
+           </div>
+        </div>
+      )}
 
       <footer className="text-center py-20">
         <p className="text-slate-300 font-black text-[12px] uppercase tracking-[12px] italic">

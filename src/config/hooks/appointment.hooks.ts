@@ -21,7 +21,7 @@ export interface Appointment {
   };
 }
 
-export const useAppointments = (filters?: { status?: string; type?: string; doctorId?: string; patientId?: string }) => {
+export const useAppointments = (filters?: { status?: string; type?: string; doctorId?: string; patientId?: string; date?: string }) => {
   return useQuery<Appointment[]>({
     queryKey: ["appointments", filters],
     queryFn: async () => {

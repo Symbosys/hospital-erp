@@ -106,7 +106,20 @@ export function Laboratories() {
                </div>
             </div>
 
-            <button className="w-full mt-12 py-5 bg-white text-slate-900 rounded-[24px] font-black text-sm hover:scale-105 active:scale-95 transition-all shadow-xl">DOWNLOAD STATUS REPORT</button>
+            <button 
+               onClick={() => {
+                 const csv = "TestID,Name,Type,Price,Status\n" + tests?.map(t => `${t.testId},${t.name},${t.type},${t.price},${t.status}`).join("\n");
+                 const blob = new Blob([csv], { type: 'text/csv' });
+                 const url = URL.createObjectURL(blob);
+                 const a = document.createElement('a');
+                 a.href = url;
+                 a.download = `diagnostic_report_${new Date().getTime()}.csv`;
+                 a.click();
+               }}
+               className="w-full mt-12 py-5 bg-white text-slate-900 rounded-[24px] font-black text-sm hover:scale-105 active:scale-95 transition-all shadow-xl"
+            >
+               DOWNLOAD STATUS REPORT
+            </button>
          </div>
       </div>
     </div>

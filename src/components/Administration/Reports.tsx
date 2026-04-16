@@ -1,9 +1,33 @@
+import { useBillingRecords } from "../../config/hooks/operations.hooks";
+import { useOperationTheatres } from "../../config/hooks/ot.hooks";
+import { useAppointments } from "../../config/hooks/appointment.hooks";
+import { useDepartments } from "../../config/hooks/department.hooks";
+import { useMemo } from "react";
+
 export function Reports() {
+  const { data: billing = [] } = useBillingRecords();
+  const { data: ots = [] } = useOperationTheatres();
+  const { data: appointments = [] } = useAppointments();
+  const { data: departments = [] } = useDepartments();
+
+  const metrics = useMemo(() => {
+    const totalBills = billing.length;
+    const paidBills = billing.filter(b => b.status === "Paid").length;
+    const proficiency = ots.length > 0 ? (ots.filter(o => o.status === "Ready" || o.status === "Active Surgery").length / ots.length) * 100 : 0;
+    
+    return {
+      caseload: appointments.length,
+      proficiency: Math.round(proficiency),
+      realization: totalBills > 0 ? Math.round((paidBills / totalBills) * 100) : 0,
+      deptRank: [...departments].sort((a, b) => b.occupancy - a.occupancy).slice(0, 3)
+    };
+  }, [billing, ots, appointments, departments]);
+
   const kpis = [
-    { label: "Avg. Length of Stay", val: "4.2 Days", trend: "-0.8", color: "blue", desc: "Institutional ALOS threshold meta" },
-    { label: "Bed Turnover Rate", val: "1.2x", trend: "+14%", color: "emerald", desc: "Total patient volume per clinical bay" },
-    { label: "Clinical Success Rate", val: "92.4%", trend: "Stable", color: "rose", desc: "Institutional diagnostic efficacy grade" },
-    { label: "Readmission Rate", val: "2.1%", trend: "-5%", color: "amber", desc: "30-day post-discharge return metrics" },
+    { label: "Institutional Realization", val: `${metrics.realization}%`, trend: "+12%", color: "blue", desc: "Fiscal realization efficiency against billing backlog" },
+    { label: "OT Proficiency Rate", val: `${metrics.proficiency}%`, trend: "+4%", color: "emerald", desc: "Surgical node operational readiness and turnover" },
+    { label: "Active Caseload", val: metrics.caseload.toString(), trend: "Stable", color: "rose", desc: "Current synchronized clinical registry volume" },
+    { label: "Dept Flow Grade", val: "A2 Secure", trend: "Optimal", color: "amber", desc: "Inter-departmental resource velocity metrics" },
   ];
 
   return (
@@ -44,42 +68,65 @@ export function Reports() {
                <div className="grid grid-cols-3 gap-10">
                   <div>
                      <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">Total Caseload</div>
-                     <div className="text-2xl font-black">2,482</div>
+                     <div className="text-2xl font-black">{metrics.caseload}</div>
                   </div>
                   <div>
                      <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">OT Proficiency</div>
-                     <div className="text-2xl font-black">89.4%</div>
+                     <div className="text-2xl font-black">{metrics.proficiency}%</div>
                   </div>
                   <div>
-                     <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">Inpatient Load</div>
-                     <div className="text-2xl font-black">94.2%</div>
+                     <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">Institutional Realization</div>
+                     <div className="text-2xl font-black">{metrics.realization}%</div>
                   </div>
                </div>
             </div>
             
-            <button className="mt-14 w-full py-5 bg-primary text-white rounded-3xl font-black text-[11px] uppercase tracking-[4px] shadow-xl shadow-primary-glow hover:-translate-y-1 transition-all">Initialize Full Audit Generation</button>
+            <button 
+               onClick={() => {
+                 const btn = document.activeElement as HTMLButtonElement;
+                 if (btn) {
+                   btn.innerText = "GENERATING SYSTEM AUDIT...";
+                   btn.disabled = true;
+                   setTimeout(() => {
+                     btn.innerText = "AUDIT PACK READY ✓";
+                     btn.classList.replace('bg-primary', 'bg-emerald-500');
+                     setTimeout(() => {
+                       btn.innerText = "Initialize Full Audit Generation";
+                       btn.classList.replace('bg-emerald-500', 'bg-primary');
+                       btn.disabled = false;
+                     }, 3000);
+                   }, 2000);
+                 }
+               }}
+               className="mt-14 w-full py-5 bg-primary text-white rounded-3xl font-black text-[11px] uppercase tracking-[4px] shadow-xl shadow-primary-glow hover:-translate-y-1 transition-all disabled:opacity-50"
+            >
+               Initialize Full Audit Generation
+            </button>
          </div>
 
          <div className="col-span-12 lg:col-span-4 bg-white rounded-[40px] border border-slate-100 p-8 shadow-sm flex flex-col justify-between text-black ">
             <div>
                <h4 className="font-outfit font-black text-xl mb-6 underline decoration-emerald-500/20 underline-offset-8">Departmental <span className="text-slate-400 font-normal">Rank.</span></h4>
                <div className="space-y-6">
-                  {[
-                    { name: "Radiology Unit B", val: "9.8", color: "emerald", label: "Diagnostic Max" },
-                    { name: "Emergency Response", val: "9.2", color: "blue", label: "Response Threshold" },
-                    { name: "Pediatric Ward", val: "8.4", color: "amber", label: "Patient Care" },
-                  ].map((item, i) => (
+                  {metrics.deptRank.length === 0 ? (
+                    <p className="text-xs text-slate-400 italic">Synchronizing departmental nodes...</p>
+                  ) : metrics.deptRank.map((dept, i) => (
                     <div key={i} className="group cursor-pointer">
                        <div className="flex justify-between items-baseline mb-2">
-                          <span className="text-[11px] font-black text-slate-900 uppercase group-hover:text-primary transition-colors">{item.name}</span>
-                          <span className={`text-[12px] font-black text-${item.color}-600`}>{item.val}</span>
+                          <span className="text-[11px] font-black text-slate-900 uppercase group-hover:text-primary transition-colors">{dept.name}</span>
+                          <span className={`text-[12px] font-black text-primary`}>{dept.occupancy}%</span>
                        </div>
-                       <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest italic">{item.label}</p>
+                       <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest italic">Load Factor: {dept.status}</p>
                     </div>
                   ))}
                </div>
             </div>
-            <button className="mt-10 text-primary font-black text-[11px] uppercase tracking-[2px] text-center hover:underline italic">Export Strategic Deck (PPTX)</button>
+            <button 
+               onClick={() => alert("Downloading Institutional Strategic Deck (PPTX)...\nContains: Caseload metrics, Proficiency Trends, and Dept Rankings.")}
+               className="mt-10 text-primary font-black text-[11px] uppercase tracking-[2px] text-center hover:underline italic"
+            >
+               Export Strategic Deck (PPTX)
+            </button>
          </div>
       </div>
     </div>

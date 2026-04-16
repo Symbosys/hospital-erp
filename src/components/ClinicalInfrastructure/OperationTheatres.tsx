@@ -70,7 +70,12 @@ export function OperationTheatres() {
           <p className="text-sm text-slate-400 font-medium mt-2">Managing theatre slots, equipment status, and surgical flow.</p>
         </div>
         <div className="flex gap-4">
-           <button className="bg-white border border-slate-200 px-6 py-3 rounded-2xl font-bold text-xs text-slate-700 shadow-sm hover:bg-slate-50">Surgery Logs</button>
+           <button 
+             onClick={() => alert("Accessing Surgical Audit Registry...\nLoading procedure logs for current fiscal cycle.")}
+             className="bg-white border border-slate-200 px-6 py-3 rounded-2xl font-bold text-xs text-slate-700 shadow-sm hover:bg-slate-50"
+           >
+             Surgery Logs
+           </button>
            <button 
              onClick={() => {
                theatres?.filter(o => o.status === 'Ready').forEach(o => {

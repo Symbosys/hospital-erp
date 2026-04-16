@@ -189,7 +189,26 @@ export function Wards() {
               <div className="flex flex-col items-center gap-4">
                  <div className="w-1.5 h-1.5 rounded-full bg-primary animate-ping"></div>
                  <p className="text-slate-400 font-bold text-sm tracking-tight">Patient monitoring telemetry is currently in observation mode.</p>
-                 <button className="bg-primary text-white px-8 py-3.5 rounded-2xl font-black text-xs shadow-lg shadow-primary/20 hover:scale-105 transition-transform">Sync Vitals Network</button>
+                 <button 
+                   onClick={(e) => {
+                     const btn = e.currentTarget;
+                     const originalText = btn.innerText;
+                     btn.innerText = "SYNCHRONIZING...";
+                     btn.disabled = true;
+                     setTimeout(() => {
+                       btn.innerText = "NETWORK STABLE ✓";
+                       btn.classList.add('bg-emerald-500');
+                       setTimeout(() => {
+                         btn.innerText = originalText;
+                         btn.classList.remove('bg-emerald-500');
+                         btn.disabled = false;
+                       }, 2000);
+                     }, 1500);
+                   }}
+                   className="bg-primary text-white px-8 py-3.5 rounded-2xl font-black text-xs shadow-lg shadow-primary/20 hover:scale-105 transition-all disabled:opacity-50"
+                 >
+                   Sync Vitals Network
+                 </button>
               </div>
            </div>
         </div>

@@ -1,60 +1,50 @@
 import { useState } from "react";
+import { useAppointments } from "../../config/hooks/appointment.hooks";
+import { useOperationTheatres } from "../../config/hooks/ot.hooks";
 
 export function ClinicalSchedule() {
   const [activeDate, setActiveDate] = useState(new Date().toISOString().split('T')[0]);
+  
+  const { data: appointments = [], isLoading: apptsLoading } = useAppointments({ date: activeDate });
+  const { data: ots = [], isLoading: otsLoading } = useOperationTheatres();
 
-  const SCHEDULE_DATA = [
-    {
-      id: 1,
-      time: "08:00 AM",
-      unit: "OT-01",
-      procedure: "Cardiovascular Bypass",
-      staff: "Dr. Alexander Pierce",
+  const isLoading = apptsLoading || otsLoading;
+
+  const handlePrevDay = () => {
+    const prev = new Date(activeDate);
+    prev.setDate(prev.getDate() - 1);
+    setActiveDate(prev.toISOString().split('T')[0]);
+  };
+
+  const handleNextDay = () => {
+    const next = new Date(activeDate);
+    next.setDate(next.getDate() + 1);
+    setActiveDate(next.toISOString().split('T')[0]);
+  };
+
+  // Unify appointments and surgeries into a single schedule
+  const scheduleData = [
+    ...appointments.map(appt => ({
+      id: appt.id,
+      time: appt.timeSlot,
+      unit: appt.type === "Online" ? "Tele-Node" : "OPD-Clinic",
+      procedure: appt.notes || "Clinical Consultation",
+      staff: appt.doctor?.name || "Unassigned",
+      status: appt.status,
+      type: "Appointment",
+      progress: appt.status === "Completed" ? 100 : appt.status === "In-Progress" ? 50 : 0
+    })),
+    ...ots.filter(ot => ot.status === "Active Surgery").map(ot => ({
+      id: ot.id,
+      time: "Scheduled Now",
+      unit: ot.theatreId,
+      procedure: ot.procedure || "Surgical Intervention",
+      staff: ot.doctor || "Surgical Team",
       status: "In Progress",
       type: "Surgery",
-      progress: 65,
-    },
-    {
-      id: 2,
-      time: "09:30 AM",
-      unit: "Lab-X1",
-      procedure: "Blood Panel Sweep",
-      staff: "Tech. Sarah Miller",
-      status: "Scheduled",
-      type: "Diagnostic",
-      progress: 0,
-    },
-    {
-      id: 3,
-      time: "10:00 AM",
-      unit: "Ward-B",
-      procedure: "Critical Rounds",
-      staff: "Dr. Meredith Grey",
-      status: "Scheduled",
-      type: "Round",
-      progress: 0,
-    },
-    {
-      id: 4,
-      time: "11:30 AM",
-      unit: "OT-03",
-      procedure: "Neurological Resection",
-      staff: "Dr. Derek Shepherd",
-      status: "Preparing",
-      type: "Surgery",
-      progress: 10,
-    },
-    {
-      id: 5,
-      time: "01:00 PM",
-      unit: "Lab-A2",
-      procedure: "Biometric Scans",
-      staff: "Tech. James Wilson",
-      status: "Routine",
-      type: "Diagnostic",
-      progress: 0,
-    },
-  ];
+      progress: ot.progress
+    }))
+  ].sort((a, b) => a.time.localeCompare(b.time));
 
   return (
     <div className="space-y-8 animate-fade-in-up">
@@ -71,11 +61,21 @@ export function ClinicalSchedule() {
         </div>
 
         <div className="flex gap-3">
-          <button className="bg-slate-50 text-slate-600 px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest border border-slate-100 hover:bg-slate-100 transition-all">Previous</button>
+          <button 
+            onClick={handlePrevDay}
+            className="bg-slate-50 text-slate-600 px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest border border-slate-100 hover:bg-slate-100 transition-all"
+          >
+            Previous
+          </button>
           <div className="bg-primary text-white px-6 py-2.5 rounded-xl text-[11px] font-black uppercase tracking-widest shadow-lg shadow-primary-glow flex items-center gap-2">
             <span>{new Date(activeDate).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
           </div>
-          <button className="bg-slate-50 text-slate-600 px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest border border-slate-100 hover:bg-slate-100 transition-all">Next</button>
+          <button 
+            onClick={handleNextDay}
+            className="bg-slate-50 text-slate-600 px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest border border-slate-100 hover:bg-slate-100 transition-all"
+          >
+            Next
+          </button>
         </div>
       </div>
 
@@ -98,42 +98,53 @@ export function ClinicalSchedule() {
            </div>
 
            <div className="space-y-4">
-              {SCHEDULE_DATA.map((item) => (
-                <div key={item.id} className="group relative flex items-start gap-6 p-6 rounded-3xl hover:bg-slate-50 border border-transparent hover:border-slate-100 transition-all">
-                  <div className="w-24 shrink-0 pt-1">
-                    <span className="text-sm font-black text-slate-900 block">{item.time}</span>
-                    <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider px-2 py-0.5 bg-slate-100/50 rounded-full mt-1 inline-block">{item.unit}</span>
-                  </div>
-
-                  <div className="flex-1">
-                    <div className="flex justify-between items-start mb-2">
-                       <div>
-                          <h5 className="text-[0.95rem] font-bold text-slate-900 group-hover:text-primary transition-colors">{item.procedure}</h5>
-                          <p className="text-[0.7rem] text-slate-500 font-medium">Led by <span className="text-slate-900 font-bold">{item.staff}</span></p>
-                       </div>
-                       <span className={`text-[9px] font-black px-2.5 py-1 rounded-full uppercase tracking-widest ${
-                         item.status === 'In Progress' ? 'bg-blue-50 text-blue-600' :
-                         item.status === 'Scheduled' ? 'bg-emerald-50 text-emerald-600' :
-                         item.status === 'Preparing' ? 'bg-amber-50 text-amber-600' : 'bg-slate-50 text-slate-500'
-                       }`}>
-                         {item.status}
-                       </span>
+              {isLoading ? (
+                <div className="flex flex-col items-center justify-center py-20 gap-4">
+                   <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+                   <p className="text-slate-400 font-black text-xs uppercase tracking-widest">Synchronizing Matrix...</p>
+                </div>
+              ) : scheduleData.length === 0 ? (
+                <div className="py-20 text-center">
+                   <p className="text-slate-300 font-bold uppercase tracking-[10px] text-xs">Timeline Vacant</p>
+                </div>
+              ) : (
+                scheduleData.map((item) => (
+                  <div key={item.id} className="group relative flex items-start gap-6 p-6 rounded-3xl hover:bg-slate-50 border border-transparent hover:border-slate-100 transition-all">
+                    <div className="w-24 shrink-0 pt-1">
+                      <span className="text-sm font-black text-slate-900 block">{item.time}</span>
+                      <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider px-2 py-0.5 bg-slate-100/50 rounded-full mt-1 inline-block">{item.unit}</span>
                     </div>
 
-                    {item.progress > 0 && (
-                      <div className="mt-4">
-                         <div className="flex justify-between items-center mb-1.5 px-1">
-                            <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider">Operational Progress</span>
-                            <span className="text-[10px] font-black text-primary">{item.progress}%</span>
+                    <div className="flex-1">
+                      <div className="flex justify-between items-start mb-2">
+                         <div>
+                            <h5 className="text-[0.95rem] font-bold text-slate-900 group-hover:text-primary transition-colors">{item.procedure}</h5>
+                            <p className="text-[0.7rem] text-slate-500 font-medium">Led by <span className="text-slate-900 font-bold">{item.staff}</span></p>
                          </div>
-                         <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
-                            <div className="h-full bg-primary rounded-full shadow-[0_0_10px_rgba(37,99,235,0.2)] transition-all duration-1000" style={{ width: `${item.progress}%` }}></div>
-                         </div>
+                         <span className={`text-[9px] font-black px-2.5 py-1 rounded-full uppercase tracking-widest ${
+                           item.status === 'In Progress' || item.status === 'In-Progress' ? 'bg-blue-50 text-blue-600' :
+                           item.status === 'Scheduled' || item.status === 'Waiting' ? 'bg-emerald-50 text-emerald-600' :
+                           item.status === 'Preparing' ? 'bg-amber-50 text-amber-600' : 'bg-slate-50 text-slate-500'
+                         }`}>
+                           {item.status}
+                         </span>
                       </div>
-                    )}
+
+                      {item.progress > 0 && (
+                        <div className="mt-4">
+                           <div className="flex justify-between items-center mb-1.5 px-1">
+                              <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider">Operational Progress</span>
+                              <span className="text-[10px] font-black text-primary">{item.progress}%</span>
+                           </div>
+                           <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
+                              <div className="h-full bg-primary rounded-full shadow-[0_0_10px_rgba(37,99,235,0.2)] transition-all duration-1000" style={{ width: `${item.progress}%` }}></div>
+                           </div>
+                        </div>
+                      )}
+                    </div>
                   </div>
-                </div>
-              ))}
+                ))
+              )}
            </div>
         </div>
 
@@ -144,15 +155,22 @@ export function ClinicalSchedule() {
               <h4 className="text-lg font-outfit font-black mb-6">Schedule Density</h4>
               <div className="grid grid-cols-2 gap-6">
                  <div>
-                    <div className="text-3xl font-black mb-1">84%</div>
+                    <div className="text-3xl font-black mb-1">
+                       {ots.length > 0 ? Math.round((ots.filter(o => o.status === "Active Surgery").length / ots.length) * 100) : 0}%
+                    </div>
                     <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Theater Load</div>
                  </div>
                  <div>
-                    <div className="text-3xl font-black mb-1">12</div>
-                    <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Pending Lab Sets</div>
+                    <div className="text-3xl font-black mb-1">{appointments.filter(a => a.status === "Waiting").length}</div>
+                    <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Waiting Queue</div>
                  </div>
               </div>
-              <button className="w-full mt-8 py-4 bg-primary text-white rounded-2xl font-black text-xs shadow-xl shadow-primary/20 hover:scale-105 active:scale-95 transition-all">MODIFY MASTER GRID</button>
+               <button 
+                 onClick={() => alert("Initializing Master Grid Modification Protocol...\nAccess Restricted to Clinical Administrators.")}
+                 className="w-full mt-8 py-4 bg-primary text-white rounded-2xl font-black text-xs shadow-xl shadow-primary/20 hover:scale-105 active:scale-95 transition-all"
+               >
+                 MODIFY MASTER GRID
+               </button>
            </div>
 
            <div className="bg-white p-8 rounded-[40px] border border-slate-200/60 shadow-sm">
